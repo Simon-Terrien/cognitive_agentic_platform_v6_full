@@ -1,0 +1,180 @@
+services:
+  training:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.training
+    expose:
+      - "15000"
+    gpus: all
+    environment:
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL:-INFO}
+      APP_DEFAULT_MODEL_ID: ${APP_DEFAULT_MODEL_ID:-ollama_qwen3}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - training_data:/tmp/training
+    restart: unless-stopped
+    networks:
+      - app_net
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:15000/api/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "15001:15001"
+    environment:
+      APP_ENVIRONMENT: ${APP_ENVIRONMENT:-development}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL:-INFO}
+      APP_LOKI_URL: ${APP_LOKI_URL:-http://loki:3100}
+      APP_LOKI_ENABLED: ${APP_LOKI_ENABLED:-true}
+      APP_AUTH_REQUIRED: ${APP_AUTH_REQUIRED:-false}
+      APP_AUTH_SECRET: ${APP_AUTH_SECRET:-change-me-local-rd-secret}
+      APP_AUTH_BOOTSTRAP_EMAIL: ${APP_AUTH_BOOTSTRAP_EMAIL:-operator@local}
+      APP_AUTH_BOOTSTRAP_PASSWORD: ${APP_AUTH_BOOTSTRAP_PASSWORD:-operator-demo-pass}
+      APP_AUTH_STORE_DIR: /tmp/cognitive_agentic_platform_v6_auth
+      APP_DEFAULT_MODEL_ID: ${APP_DEFAULT_MODEL_ID:-ollama_qwen3}
+      APP_OLLAMA_BASE_URL: ${APP_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      APP_LLAMACPP_BASE_URL: ${APP_LLAMACPP_BASE_URL:-http://host.docker.internal:8001/v1}
+      APP_VLLM_BASE_URL: ${APP_VLLM_BASE_URL:-http://host.docker.internal:8002/v1}
+      APP_TRAINING_SERVICE_URL: http://training:15000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      training:
+        condition: service_healthy
+      loki:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - app_net
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:15001/api/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "15002:15002"
+    environment:
+      VITE_API_BASE: ${VITE_API_BASE:-http://localhost:15001}
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app_net
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:15002').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+    networks:
+      - app_net
+
+  loki:
+    image: grafana/loki:3.0.0
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./docker/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+    networks:
+      - app_net
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    driver: bridge
+
+volumes:
+  training_data:
+  prometheus_data:
+  loki_data:
+  grafana_data:

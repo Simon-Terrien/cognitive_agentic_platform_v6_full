@@ -1,0 +1,34 @@
+# VCS
+.git
+.gitignore
+
+# Env / secrets
+.env
+
+# Python artifacts
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.venv/
+**/venv/
+
+# Node artifacts
+**/node_modules/
+**/dist/
+**/*.tsbuildinfo
+
+# Local caches / logs / temp
+**/.cache/
+**/*.log
+**/*.pid
+**/*.db
+**/*.sqlite3
+
+# Archives and editor files
+**/*.zip
+**/*.tar
+**/.DS_Store
+**/.idea/
+**/.vscode/

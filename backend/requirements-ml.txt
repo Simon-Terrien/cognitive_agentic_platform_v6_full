@@ -1,0 +1,6 @@
+transformers>=4.56.0
+torch>=2.8.0
+accelerate>=1.10.0
+trl>=0.21.0
+peft>=0.17.0
+# Unsloth installation is CUDA / Torch specific: see backend/app/training/unsloth_adapter.py
