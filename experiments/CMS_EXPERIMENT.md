@@ -30,10 +30,27 @@ JSON output:
 python3 experiments/scripts/benchmark_cms_attention.py --json
 ```
 
+Non-synthetic corpus mode:
+
+```bash
+python3 experiments/scripts/benchmark_cms_attention.py \
+  --dataset-source corpus \
+  --corpus-path experiments/data/dialogue_corpus.txt
+```
+
 Reported metrics:
 - `coherence_proxy`: average attention weight from state `i` to `i+1`
 - `trajectory_stability_proxy`: average consecutive-state similarity
 - `similarity_distribution`: min/max/mean/std and percentiles
+
+Acceptance gate output:
+- `acceptance.checks`: boolean checks for each delta threshold
+- `acceptance.passed`: overall gate decision
+
+Default threshold profile (tunable):
+- `min_coherence_delta=-0.02`
+- `min_stability_delta=0.0`
+- `min_mean_similarity_delta=0.0`
 
 ## Test coverage
 `experiments/tests/test_cms_attention.py` validates:
@@ -44,8 +61,10 @@ Reported metrics:
 
 ## Future integration path (not implemented in Phase 2A)
 Potential runtime integration later can be done behind an adapter/flag:
-1. Add a `SimilarityBackend` interface with `cosine` and `cms_overlap` strategies.
+1. Use the experimental adapter boundary in `experiments/cms/adapter.py`:
+   - `SimilarityBackend` protocol
+   - `CMSAttentionAdapterConfig` (includes `feature_flag_name`, default `APP_EXPERIMENTAL_CMS_ATTENTION`)
+   - `CMSAttentionAdapter`
 2. Keep default behavior unchanged (`cosine`) until benchmark gains are consistent.
 3. Introduce opt-in runtime flag (e.g. `APP_EXPERIMENTAL_CMS_ATTENTION=true`).
 4. Record production-safe telemetry before making CMS path default.
-

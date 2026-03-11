@@ -68,3 +68,32 @@
 1. Decide acceptance thresholds for CMS benchmark deltas (coherence/stability proxies) before adapter integration.
 2. Add dataset-backed CMS benchmark (non-synthetic) while keeping runtime untouched.
 3. Design feature-flag adapter boundary for optional runtime integration in a later phase.
+
+
+## Phase 2A Extension (3-2-1)
+
+### Completed work
+- `3` Designed feature-flag adapter boundary (isolated):
+  - `experiments/cms/adapter.py`
+  - Adds `SimilarityBackend` protocol and `CMSAttentionAdapterConfig` with `feature_flag_name='APP_EXPERIMENTAL_CMS_ATTENTION'`.
+- `2` Added non-synthetic dataset benchmark mode:
+  - `experiments/data/dialogue_corpus.txt`
+  - `benchmark_cms_attention.py --dataset-source corpus --corpus-path ...`
+  - Text-to-CMS encoding added in `experiments/cms/encoding.py`.
+- `1` Added explicit acceptance thresholds and gate output:
+  - Benchmark now reports `acceptance.checks` and `acceptance.passed`.
+  - Tunable thresholds: `min_coherence_delta`, `min_stability_delta`, `min_mean_similarity_delta`.
+
+### Validation results
+- CMS tests:
+  - `PYTHONPATH=. backend/.venv/bin/pytest -q experiments/tests`
+  - Result: **7 passed**
+- Benchmark synthetic mode:
+  - `PYTHONPATH=. python3 experiments/scripts/benchmark_cms_attention.py --json`
+  - Result: success
+- Benchmark corpus mode:
+  - `PYTHONPATH=. python3 experiments/scripts/benchmark_cms_attention.py --dataset-source corpus --json`
+  - Result: success
+- Backend baseline unchanged:
+  - `cd backend && PYTHONPATH=. .venv/bin/pytest`
+  - Result: **31 passed**
