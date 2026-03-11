@@ -111,3 +111,24 @@
   - `acceptance.passed = false`
   - `acceptance.checks = {coherence_proxy: true, trajectory_stability_proxy: false, mean_similarity: false}`
   - Interpretation: CMS heuristic encoder + overlap metric is not yet meeting corpus stability/similarity thresholds; keep as experimental-only.
+
+## Phase 2A.1 Signal Improvement
+
+### Per-corpus outcomes (multi-corpus calibrated run)
+- conversational_corpus: passed=True | d_coherence=-0.000628, d_stability=-0.040194, d_mean_similarity=-0.032481
+- dialogue_corpus: passed=False | d_coherence=-0.000542, d_stability=-0.060795, d_mean_similarity=-0.059096
+- emotional_corpus: passed=False | d_coherence=-0.000889, d_stability=-0.053823, d_mean_similarity=-0.042161
+- technical_corpus: passed=True | d_coherence=-0.000209, d_stability=-0.023888, d_mean_similarity=-0.021059
+
+### Calibrated provisional thresholds
+- method: quantile_0.25
+- min_coherence_delta: -0.000693
+- min_stability_delta: -0.055566
+- min_mean_similarity_delta: -0.046395
+
+### Aggregate
+- num_corpora: 4
+- pass_rate: 0.500
+
+### Recommendation status
+- recommendation: **still not ready** for runtime integration (pass_rate 0.5 and inconsistent corpus behavior).

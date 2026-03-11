@@ -1,0 +1,11 @@
+I felt relieved when the alert finally cleared.
+Then I became worried because a new spike appeared minutes later.
+The team sounded frustrated, yet determined to fix the issue tonight.
+I am excited that the fallback worked, but still anxious about hidden bugs.
+She was calm during the call, while I felt tense and impatient.
+After the patch, everyone seemed hopeful and more confident.
+Now I am afraid we might miss a subtle regression under load.
+The success message made us happy, though the uncertainty remains.
+I was angry at first, then grateful when the root cause was found.
+By the end, the mood shifted from panic to cautious optimism.
+

@@ -12,10 +12,21 @@ Baselines included:
 - cosine similarity (`cosine_similarity`)
 - dot-product-like baseline (`dot_product_similarity`)
 
+Experimental encoder:
+- `experiments/cms/encoding.py`
+- pipeline: tokenize -> feature extraction -> CMS projection (`text_to_cms_state`)
+
 ## Why this is experimental
 - It is not connected to `agent_engine.py`.
 - It uses synthetic controlled trajectories and proxy metrics, not production user traffic.
 - Similarity and attention choices (phase weighting, softmax temperature, metric definitions) are hypothesis-driven and can change.
+- The text encoder is heuristic and lexicon-based; it is not a learned representation.
+
+## Encoder limitations
+- Language coverage is limited to the embedded lexicons and English-centric heuristics.
+- No syntactic parser or semantic model is used; structural complexity is approximate.
+- Feature interactions are hand-tuned and can overfit to small corpora.
+- Scores should be treated as exploratory signals, not cognitive truth.
 
 ## Benchmark and metrics
 Run:
@@ -38,6 +49,15 @@ python3 experiments/scripts/benchmark_cms_attention.py \
   --corpus-path experiments/data/dialogue_corpus.txt
 ```
 
+Multi-corpus calibration mode:
+
+```bash
+python3 experiments/scripts/benchmark_cms_attention.py \
+  --dataset-source multi-corpus \
+  --data-dir experiments/data \
+  --json
+```
+
 Reported metrics:
 - `coherence_proxy`: average attention weight from state `i` to `i+1`
 - `trajectory_stability_proxy`: average consecutive-state similarity
@@ -47,10 +67,19 @@ Acceptance gate output:
 - `acceptance.checks`: boolean checks for each delta threshold
 - `acceptance.passed`: overall gate decision
 
-Default threshold profile (tunable):
-- `min_coherence_delta=-0.02`
-- `min_stability_delta=0.0`
-- `min_mean_similarity_delta=0.0`
+## Benchmark datasets used
+- `experiments/data/technical_corpus.txt` (analytical/technical discourse)
+- `experiments/data/conversational_corpus.txt` (dialogic/conversational discourse)
+- `experiments/data/emotional_corpus.txt` (emotionally variable discourse)
+- `experiments/data/dialogue_corpus.txt` (mixed operational dialogue)
+
+## Threshold rationale (provisional)
+For `multi-corpus` mode, thresholds are calibrated from observed corpus deltas:
+- method: lower quantile across per-corpus deltas (default q=0.25)
+- output: `threshold_calibration.thresholds`
+- use: each corpus run is evaluated against these calibrated thresholds
+
+This replaces arbitrary static thresholds with data-derived provisional bounds.
 
 ## Test coverage
 `experiments/tests/test_cms_attention.py` validates:
@@ -68,3 +97,7 @@ Potential runtime integration later can be done behind an adapter/flag:
 2. Keep default behavior unchanged (`cosine`) until benchmark gains are consistent.
 3. Introduce opt-in runtime flag (e.g. `APP_EXPERIMENTAL_CMS_ATTENTION=true`).
 4. Record production-safe telemetry before making CMS path default.
+
+## Current recommendation status
+- **Conditionally ready for Phase 2B design work** (adapter and evaluation policy), but **not ready for runtime integration**.
+- Runtime integration should remain blocked until corpus-level pass rate and threshold stability are acceptable over larger datasets.

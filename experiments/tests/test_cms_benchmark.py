@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from experiments.scripts.benchmark_cms_attention import run_benchmark
+from experiments.scripts.benchmark_cms_attention import run_benchmark, run_multi_corpus_benchmark
 
 
 def test_benchmark_runs_on_corpus_dataset():
@@ -16,6 +16,7 @@ def test_benchmark_runs_on_corpus_dataset():
     )
     assert result['dataset']['source'] == 'corpus'
     assert result['dataset']['length'] == 10
+    assert result['dataset']['name'] == 'dialogue_corpus'
     assert 'acceptance' in result
     assert 'checks' in result['acceptance']
 
@@ -45,3 +46,18 @@ def test_benchmark_acceptance_thresholds_toggle():
     assert permissive['acceptance']['passed'] is True
     assert strict['acceptance']['passed'] is False
 
+
+def test_multi_corpus_benchmark_contains_per_corpus_and_aggregate():
+    data_dir = Path(__file__).resolve().parents[1] / 'data'
+    result = run_multi_corpus_benchmark(data_dir=data_dir, length=20, seed=42, quantile=0.25)
+
+    assert result['mode'] == 'multi-corpus'
+    assert 'threshold_calibration' in result
+    assert 'thresholds' in result['threshold_calibration']
+    assert 'per_corpus' in result
+    assert 'aggregate' in result
+    assert result['aggregate']['num_corpora'] >= 3
+    assert 0.0 <= result['aggregate']['pass_rate'] <= 1.0
+    for corpus_result in result['per_corpus'].values():
+        assert 'acceptance' in corpus_result
+        assert 'delta' in corpus_result

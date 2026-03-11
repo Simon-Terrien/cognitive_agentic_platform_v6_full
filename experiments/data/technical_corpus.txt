@@ -1,0 +1,11 @@
+The rollout requires deterministic reproducibility across benchmark environments.
+We measured p95 latency before and after cache prewarming to isolate regression vectors.
+If throughput drops while token cost rises, the deployment should trigger a rollback guard.
+The incident report includes timeline, root cause hypothesis, and mitigation validation.
+Because the scheduler runs asynchronously, task starvation can appear under burst traffic.
+A precise baseline comparison must include confidence intervals and sample variance.
+We should evaluate model routing decisions against capability constraints and health snapshots.
+When the provider is offline, fallback behavior must remain predictable and observable.
+The architecture review concluded that memory persistence is necessary for reliable recall.
+Next, we profile allocation hotspots and quantify the impact of batching strategies.
+
