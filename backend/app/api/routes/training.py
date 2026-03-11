@@ -43,7 +43,8 @@ def datasets():
 
 @router.get('/training/plan')
 def training_plan(dataset_id: str | None = Query(default=None), model_id: str | None = Query(default=None), _user=Depends(require_user_if_enabled)):
-    pref = get_platform_store().get_preferences(_user.user_id) if _user else None
+    user_id = getattr(_user, 'user_id', None)
+    pref = get_platform_store().get_preferences(user_id) if user_id else None
     dataset = get_dataset_spec(dataset_id or (pref.selected_dataset_id if pref else None)) if (dataset_id or (pref.selected_dataset_id if pref else None)) else get_default_dataset()
     model_choice = model_id or (pref.selected_model_id if pref else None) or settings.default_model_id
     model = get_model_spec(model_choice)

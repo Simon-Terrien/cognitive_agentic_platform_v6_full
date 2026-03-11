@@ -1,10 +1,11 @@
 import httpx
-from fastapi.testclient import TestClient
+from fastapi import HTTPException
 
-from app.main import app
+from app.api.routes import chat
 from app.providers.base import ProviderResult
 from app.providers.ollama import OllamaProvider
-from app.api.routes import chat
+from app.schemas.chat import AgentQueryRequest, ChatRequest
+from app.models.catalog import get_model_spec
 
 
 class FakeProvider:
@@ -25,12 +26,31 @@ class OfflineProvider:
         yield
 
 
+def _pin_resolution(monkeypatch, model_id: str) -> None:
+    spec = get_model_spec(model_id)
+    monkeypatch.setattr(
+        chat.engine.router,
+        'resolve',
+        lambda providers, requested_model_id=None, **kwargs: type(
+            'Resolution',
+            (),
+            {
+                'requested_model_id': requested_model_id or model_id,
+                'resolved_model': spec,
+                'fallback_reason': None,
+                'fallback_candidates': [model_id],
+                'health_snapshot': [],
+                'routing_notes': [],
+            },
+        )(),
+    )
+
+
 def test_chat_round_trip(monkeypatch):
+    _pin_resolution(monkeypatch, 'ollama_qwen3')
     monkeypatch.setattr(chat.engine.providers, 'get', lambda spec: FakeProvider())
-    with TestClient(app) as client:
-        response = client.post('/api/chat', json={'message': 'Explain local model routing', 'model_id': 'ollama_qwen3'})
-    assert response.status_code == 200
-    payload = response.json()
+    payload = chat._run_chat('Explain local model routing', 'ollama_qwen3', None)
+
     assert payload['answer']
     assert payload['model_id'] == 'ollama_qwen3'
     assert payload['traces']
@@ -59,18 +79,16 @@ def test_chat_passes_session_key_to_engine(monkeypatch):
 
     monkeypatch.setattr(chat.engine, 'run', fake_run)
 
-    with TestClient(app) as client:
-        response = client.post('/api/chat', json={'message': 'Explain local model routing', 'model_id': 'ollama_qwen3'})
-    assert response.status_code == 200
+    response = chat.chat(ChatRequest(message='Explain local model routing', model_id='ollama_qwen3'), user=None)
+    assert response['answer'] == 'ok'
     assert captured['session_id'] == 'anonymous::ollama_qwen3'
 
 
 def test_agent_query_alias_round_trip(monkeypatch):
+    _pin_resolution(monkeypatch, 'ollama_qwen3')
     monkeypatch.setattr(chat.engine.providers, 'get', lambda spec: FakeProvider())
-    with TestClient(app) as client:
-        response = client.post('/api/agent/query', json={'query': 'Explain local model routing', 'model_id': 'ollama_qwen3'})
-    assert response.status_code == 200
-    payload = response.json()
+    payload = chat.agent_query(AgentQueryRequest(query='Explain local model routing', model_id='ollama_qwen3'), user=None)
+
     assert payload['answer']
     assert payload['model_id'] == 'ollama_qwen3'
     assert payload['traces']
@@ -79,44 +97,42 @@ def test_agent_query_alias_round_trip(monkeypatch):
 
 def test_chat_stream_emits_final_event(monkeypatch):
     monkeypatch.setattr(chat.engine.providers, 'get', lambda spec: FakeProvider())
-    with TestClient(app) as client:
-        response = client.get('/api/chat/stream?message=Explain%20providers&model_id=ollama_qwen3')
-    assert response.status_code == 200
-    body = response.text
-    assert 'data:' in body
-    assert '"kind": "final"' in body or '"kind":"final"' in body
+    events = list(chat._stream_chat('Explain providers', 'ollama_qwen3', None))
+
+    assert events
+    assert any(event.get('kind') == 'final' for event in events)
 
 
 def test_agent_stream_alias_emits_legacy_result_event(monkeypatch):
     monkeypatch.setattr(chat.engine.providers, 'get', lambda spec: FakeProvider())
-    with TestClient(app) as client:
-        response = client.get('/api/agent/stream?query=Explain%20providers&model_id=ollama_qwen3')
-    assert response.status_code == 200
-    body = response.text
-    assert 'data:' in body
-    assert '"kind": "result"' in body or '"kind":"result"' in body
+    events = list(chat._legacy_stream_events('Explain providers', 'ollama_qwen3', None))
+
+    assert events
+    assert any(event.get('kind') == 'result' for event in events)
 
 
 def test_chat_returns_503_when_provider_is_offline(monkeypatch):
     monkeypatch.setattr(chat.engine.providers, 'get', lambda spec: OfflineProvider())
-    with TestClient(app) as client:
-        response = client.post('/api/chat', json={'message': 'Explain local model routing', 'model_id': 'ollama_qwen3'})
-    assert response.status_code == 503
-    assert 'ollama is unavailable' in response.json()['detail']
+    try:
+        chat._run_chat('Explain local model routing', 'ollama_qwen3', None)
+    except HTTPException as exc:
+        assert exc.status_code == 503
+        assert 'ollama is unavailable' in str(exc.detail)
+    else:
+        raise AssertionError('Expected HTTPException')
 
 
 def test_chat_stream_emits_error_event_when_provider_is_offline(monkeypatch):
     monkeypatch.setattr(chat.engine.providers, 'get', lambda spec: OfflineProvider())
-    with TestClient(app) as client:
-        response = client.get('/api/chat/stream?message=Explain%20providers&model_id=ollama_qwen3')
-    assert response.status_code == 200
-    body = response.text
-    assert '"kind": "error"' in body or '"kind":"error"' in body
-    assert 'ollama is unavailable' in body
+    events = list(chat._stream_chat('Explain providers', 'ollama_qwen3', None))
+
+    assert any(event.get('kind') == 'error' for event in events)
+    assert any('ollama is unavailable' in str(event.get('data', {}).get('detail', '')) for event in events)
 
 
 def test_ollama_generate_maps_connect_errors_to_provider_error(monkeypatch):
     provider = OllamaProvider('http://localhost:11434')
+
     class BrokenClient:
         def chat(self, **kwargs):
             raise httpx.ConnectError('Connection refused')

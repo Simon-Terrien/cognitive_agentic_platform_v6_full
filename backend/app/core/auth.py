@@ -96,6 +96,10 @@ class AuthManager:
         user = self._store.get_user_by_id(user.user_id) or user
         return user
 
+    def create_user(self, email: str, password: str, role: str = 'operator') -> UserRecord:
+        password_hash = self.hash_password(password)
+        return self._store.create_user(email=email, password_hash=password_hash, role=role)
+
     def decode_token(self, token: str) -> dict[str, Any]:
         settings = get_settings()
         try:

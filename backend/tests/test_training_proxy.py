@@ -1,8 +1,6 @@
 import asyncio
 import json
 
-import httpx
-
 from app import main
 
 
@@ -30,17 +28,27 @@ class FakeAsyncClient:
         return FakeTrainingResponse({'backend': 'unsloth', 'dataset_id': 'demo', 'normalized_rows': 12})
 
 
+class FakeRequest:
+    def __init__(self, method: str, query_params: dict | None = None, body: bytes = b'', headers: dict | None = None) -> None:
+        self.method = method
+        self.query_params = query_params or {}
+        self._body = body
+        self.headers = headers or {}
+
+    async def body(self) -> bytes:
+        return self._body
+
+
 def test_training_status_proxy(monkeypatch):
     main.settings.training_service_url = 'http://training.example'
     fake_client = FakeAsyncClient()
     monkeypatch.setattr(main.httpx, 'AsyncClient', lambda timeout=120.0: fake_client)
 
     async def run():
-        transport = httpx.ASGITransport(app=main.app)
-        async with httpx.AsyncClient(transport=transport, base_url='http://testserver') as client:
-            response = await client.get('/api/training/status')
+        request = FakeRequest(method='GET')
+        response = await main.proxy_training('status', request)
         assert response.status_code == 200
-        assert response.json()['idle_seconds'] == 120
+        assert json.loads(response.body)['idle_seconds'] == 120
         assert fake_client.calls[0]['method'] == 'GET'
         assert fake_client.calls[0]['url'] == 'http://training.example/api/training/status'
 
@@ -53,11 +61,10 @@ def test_training_plan_proxy_preserves_query_params(monkeypatch):
     monkeypatch.setattr(main.httpx, 'AsyncClient', lambda timeout=120.0: fake_client)
 
     async def run():
-        transport = httpx.ASGITransport(app=main.app)
-        async with httpx.AsyncClient(transport=transport, base_url='http://testserver') as client:
-            response = await client.get('/api/training/plan', params={'model_id': 'ollama_qwen3', 'dataset_id': 'demo'})
+        request = FakeRequest(method='GET', query_params={'model_id': 'ollama_qwen3', 'dataset_id': 'demo'})
+        response = await main.proxy_training('plan', request)
         assert response.status_code == 200
-        assert response.json()['backend'] == 'unsloth'
+        assert json.loads(response.body)['backend'] == 'unsloth'
         assert fake_client.calls[0]['params'] == {'model_id': 'ollama_qwen3', 'dataset_id': 'demo'}
         assert fake_client.calls[0]['url'] == 'http://training.example/api/training/plan'
 

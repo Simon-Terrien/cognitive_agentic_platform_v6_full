@@ -126,7 +126,7 @@ class PlatformStore:
                     INSERT INTO users (id, email, password_hash, role, is_active, created_at, last_seen_at)
                     VALUES (?, ?, ?, ?, 1, ?, NULL)
                     ''',
-                    (user_id, normalized, password_hash, role, created_at),
+                    (resolved_user_id, normalized, password_hash, role, created_at),
                 )
                 conn.execute(
                     '''

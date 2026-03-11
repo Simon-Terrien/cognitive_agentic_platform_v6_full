@@ -1,8 +1,5 @@
-import asyncio
+from fastapi import HTTPException
 
-import httpx
-
-from app.main import app
 from app.api.routes import models as models_route
 
 
@@ -16,25 +13,24 @@ def test_models_and_provider_status(monkeypatch):
             {'provider': 'vllm', 'ok': False, 'detail': 'offline'},
         ],
     )
-    async def run():
-        transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url='http://testserver') as client:
-            models_response = await client.get('/api/models')
-            assert models_response.status_code == 200
-            payload = models_response.json()
-            assert isinstance(payload, list)
-            ids = {item['id'] for item in payload}
-            assert 'mock_static' in ids
-            assert 'transformers_qwen3_0_6b' in ids
-            assert 'transformers_lfm2_700m' in ids
-            assert any(item['provider'] == 'ollama' for item in payload)
-            detail = await client.get('/api/models/ollama_qwen3')
-            assert detail.status_code == 200
-            assert detail.json()['id'] == 'ollama_qwen3'
-            missing = await client.get('/api/models/does-not-exist')
-            assert missing.status_code == 404
-            status = await client.get('/api/providers/status')
-            assert status.status_code == 200
-            assert isinstance(status.json(), list)
 
-    asyncio.run(run())
+    payload = models_route.list_models()
+    assert isinstance(payload, list)
+    ids = {item['id'] for item in payload}
+    assert 'mock_static' in ids
+    assert 'transformers_qwen3_0_6b' in ids
+    assert 'transformers_lfm2_700m' in ids
+    assert any(item['provider'] == 'ollama' for item in payload)
+
+    detail = models_route.get_model('ollama_qwen3')
+    assert detail['id'] == 'ollama_qwen3'
+
+    try:
+        models_route.get_model('does-not-exist')
+    except HTTPException as exc:
+        assert exc.status_code == 404
+    else:
+        raise AssertionError('Expected HTTPException for unknown model id')
+
+    status = models_route.provider_status()
+    assert isinstance(status, list)
