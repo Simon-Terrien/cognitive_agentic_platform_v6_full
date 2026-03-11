@@ -97,3 +97,17 @@
 - Backend baseline unchanged:
   - `cd backend && PYTHONPATH=. .venv/bin/pytest`
   - Result: **31 passed**
+
+
+## Phase 2A Final Validation
+- CMS experiment tests:
+  - `PYTHONPATH=. backend/.venv/bin/pytest -q experiments/tests`
+  - Result: **7 passed**
+- Backend stabilized baseline:
+  - `cd backend && PYTHONPATH=. .venv/bin/pytest`
+  - Result: **31 passed**
+- Corpus benchmark acceptance (current defaults):
+  - `PYTHONPATH=. python3 experiments/scripts/benchmark_cms_attention.py --dataset-source corpus --json`
+  - `acceptance.passed = false`
+  - `acceptance.checks = {coherence_proxy: true, trajectory_stability_proxy: false, mean_similarity: false}`
+  - Interpretation: CMS heuristic encoder + overlap metric is not yet meeting corpus stability/similarity thresholds; keep as experimental-only.
