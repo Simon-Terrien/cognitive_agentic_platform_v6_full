@@ -115,6 +115,9 @@ class ModelRouter:
                 continue
             latency_ms = float(status.get('latency_ms') or 250.0)
             score = float(spec.priority)
+            if spec.family == 'mock':
+                # Keep deterministic mock as last-resort fallback even if its catalog priority is high.
+                score -= 1000.0
             score -= min(latency_ms / 15.0, 35.0)
             score -= float(idx * 5)
             if requirements.prefer_offline and spec.offline_ready:

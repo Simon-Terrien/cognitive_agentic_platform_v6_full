@@ -1,5 +1,6 @@
 from collections.abc import Generator
 
+import httpx
 from ollama import Client, ResponseError
 
 from app.providers.base import Provider, ProviderError, ProviderResult
@@ -49,9 +50,12 @@ class OllamaProvider(Provider):
         self.client = Client(host=self.base_url)
 
     def health(self) -> tuple[bool, str]:
+        url = f'{self.base_url}/api/tags'
         try:
-            response = self.client.ps()
-            models = response.get('models', []) if isinstance(response, dict) else getattr(response, 'models', [])
+            response = httpx.get(url, timeout=0.5)
+            response.raise_for_status()
+            payload = response.json()
+            models = payload.get('models', []) if isinstance(payload, dict) else []
             return True, f'reachable ({len(models)} loaded)'
         except Exception as exc:
             return False, str(exc)

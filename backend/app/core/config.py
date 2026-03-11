@@ -75,6 +75,19 @@ class Settings:
     auto_fallback_enabled: bool = field(default_factory=lambda: os.getenv('APP_AUTO_FALLBACK_ENABLED', 'true').strip().lower() in {'1', 'true', 'yes', 'on'})
     fallback_model_ids: list[str] = field(default_factory=lambda: _csv_env('APP_FALLBACK_MODEL_IDS', 'transformers_qwen3_0_6b,mock_static'))
     provider_health_cache_seconds: int = field(default_factory=lambda: int(os.getenv('APP_PROVIDER_HEALTH_CACHE_SECONDS', '5')))
+    agent_max_recursion_depth: int = field(default_factory=lambda: int(os.getenv('APP_AGENT_MAX_RECURSION_DEPTH', '4')))
+    agent_max_iterations: int = field(default_factory=lambda: int(os.getenv('APP_AGENT_MAX_ITERATIONS', '4')))
+    agent_max_tool_calls: int = field(default_factory=lambda: int(os.getenv('APP_AGENT_MAX_TOOL_CALLS', '8')))
+    agent_max_prompt_tokens: int = field(default_factory=lambda: int(os.getenv('APP_AGENT_MAX_PROMPT_TOKENS', '6000')))
+    agent_max_total_tokens: int = field(default_factory=lambda: int(os.getenv('APP_AGENT_MAX_TOTAL_TOKENS', '10000')))
+    agent_memory_db_path: Path = field(default_factory=lambda: Path(os.getenv('APP_AGENT_MEMORY_DB_PATH', '/tmp/cognitive_agentic_platform_v6_platform/agent_memory.db')))
+    agent_memory_top_k: int = field(default_factory=lambda: int(os.getenv('APP_AGENT_MEMORY_TOP_K', '5')))
+    agent_memory_semantic_weight: float = field(default_factory=lambda: float(os.getenv('APP_AGENT_MEMORY_SEMANTIC_WEIGHT', '0.5')))
+    agent_memory_recency_weight: float = field(default_factory=lambda: float(os.getenv('APP_AGENT_MEMORY_RECENCY_WEIGHT', '0.2')))
+    agent_memory_importance_weight: float = field(default_factory=lambda: float(os.getenv('APP_AGENT_MEMORY_IMPORTANCE_WEIGHT', '0.2')))
+    agent_memory_conversation_weight: float = field(default_factory=lambda: float(os.getenv('APP_AGENT_MEMORY_CONVERSATION_WEIGHT', '0.1')))
+    agent_tool_allowlist: list[str] = field(default_factory=lambda: _csv_env('APP_AGENT_TOOL_ALLOWLIST', 'dataset_registry,benchmark_notes,training_notes,reasoning'))
+    agent_block_patterns: list[str] = field(default_factory=lambda: _csv_env('APP_AGENT_BLOCK_PATTERNS', 'ignore previous instructions,delete memory,rm -rf'))
 
 
 _settings: Settings | None = None

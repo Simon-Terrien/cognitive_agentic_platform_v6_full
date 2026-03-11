@@ -28,7 +28,7 @@ class OpenAICompatibleProvider(PydanticAIProvider):
     def _healthcheck(self) -> tuple[bool, str]:
         url = f'{self.base_url}/models'
         try:
-            response = httpx.get(url, timeout=5.0)
+            response = httpx.get(url, timeout=0.5)
             response.raise_for_status()
             return True, 'reachable'
         except Exception as exc:

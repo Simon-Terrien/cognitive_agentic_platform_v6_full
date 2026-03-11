@@ -11,7 +11,6 @@ from app.providers.pydantic_adapter import NamedPydanticAIProvider
 from app.providers.pydantic_adapter import env_api_key
 from app.providers.ollama import OllamaProvider
 from app.providers.openai_compatible import OpenAICompatibleProvider
-from app.providers.transformers_local import TransformersLocalProvider
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +28,13 @@ class ProviderManager:
         self._health_snapshot_cache: list[dict] | None = None
         self._health_snapshot_at = 0.0
         try:
+            from app.providers.transformers_local import TransformersLocalProvider
+
             transformers_provider = TransformersLocalProvider(
                 device=settings.transformers_device,
                 max_new_tokens=settings.transformers_max_new_tokens,
             )
-        except RuntimeError as exc:
+        except (RuntimeError, ModuleNotFoundError, ImportError) as exc:
             logging.getLogger(__name__).warning('Transformers provider unavailable: %s', exc)
         else:
             self.providers['transformers'] = transformers_provider
