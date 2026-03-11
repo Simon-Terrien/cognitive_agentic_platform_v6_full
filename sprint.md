@@ -132,3 +132,18 @@
 
 ### Recommendation status
 - recommendation: **still not ready** for runtime integration (pass_rate 0.5 and inconsistent corpus behavior).
+
+## Phase 2A.2 Task-Grounded Validation
+
+### Primary task
+- retrieval reranking (`experiments/data/retrieval_rerank_dataset.json`)
+
+### Task metrics (CMS vs cosine baseline)
+- CMS: hit@1=0.600, mrr=0.800, ndcg@3=0.707
+- Cosine: hit@1=0.600, mrr=0.800, ndcg@3=0.727
+- Delta (CMS-cosine): hit@1=0.000, mrr=0.000, ndcg@3=-0.019
+- practical_signal: weak_or_mixed
+
+### Recommendation status
+- recommendation: **still not ready** for runtime integration.
+- rationale: task-grounded benchmark shows no gain over cosine baseline (equal hit@1/mrr, lower ndcg@3).

@@ -1,0 +1,137 @@
+{
+  "task": "retrieval_reranking",
+  "description": "Small deterministic benchmark for comparing CMS overlap-based reranking vs cosine baseline.",
+  "queries": [
+    {
+      "query_id": "q1",
+      "query": "We need a deterministic fallback when the provider is unavailable.",
+      "candidates": [
+        {
+          "id": "q1_d1",
+          "text": "When a provider is offline, route requests to a deterministic mock runtime and preserve observability traces.",
+          "relevance": 3
+        },
+        {
+          "id": "q1_d2",
+          "text": "The UI should use larger icons and brighter colors on the dashboard homepage.",
+          "relevance": 0
+        },
+        {
+          "id": "q1_d3",
+          "text": "Fallback selection should depend on provider health and compatibility constraints.",
+          "relevance": 2
+        },
+        {
+          "id": "q1_d4",
+          "text": "Quantum circuits can estimate inner products using a Hadamard test.",
+          "relevance": 0
+        }
+      ]
+    },
+    {
+      "query_id": "q2",
+      "query": "I am worried and frustrated because the error rate keeps rising.",
+      "candidates": [
+        {
+          "id": "q2_d1",
+          "text": "The team felt anxious and frustrated as alerts escalated during the incident.",
+          "relevance": 3
+        },
+        {
+          "id": "q2_d2",
+          "text": "Latency percentile dropped after enabling batch prefill and prompt caching.",
+          "relevance": 0
+        },
+        {
+          "id": "q2_d3",
+          "text": "Engineers remained calm and optimistic after rollback succeeded.",
+          "relevance": 1
+        },
+        {
+          "id": "q2_d4",
+          "text": "The release checklist includes documentation and model-card updates.",
+          "relevance": 0
+        }
+      ]
+    },
+    {
+      "query_id": "q3",
+      "query": "Tomorrow we should benchmark both variants before deployment.",
+      "candidates": [
+        {
+          "id": "q3_d1",
+          "text": "Schedule performance comparisons tomorrow, then decide rollout after reviewing metrics.",
+          "relevance": 3
+        },
+        {
+          "id": "q3_d2",
+          "text": "Yesterday we discussed licensing and legal review for model redistribution.",
+          "relevance": 1
+        },
+        {
+          "id": "q3_d3",
+          "text": "A synthetic dialogue corpus was added for CMS experiments.",
+          "relevance": 1
+        },
+        {
+          "id": "q3_d4",
+          "text": "Fallback mock mode is deterministic and useful for smoke tests.",
+          "relevance": 0
+        }
+      ]
+    },
+    {
+      "query_id": "q4",
+      "query": "Analyze structural complexity and discourse markers in this technical discussion.",
+      "candidates": [
+        {
+          "id": "q4_d1",
+          "text": "Because the scheduler is asynchronous, clause-heavy reasoning can reveal structural complexity and discourse load.",
+          "relevance": 3
+        },
+        {
+          "id": "q4_d2",
+          "text": "Happy users celebrated the stable release and shared positive feedback.",
+          "relevance": 0
+        },
+        {
+          "id": "q4_d3",
+          "text": "However, therefore, and because are common discourse markers in analytical writing.",
+          "relevance": 2
+        },
+        {
+          "id": "q4_d4",
+          "text": "Sports commentary is often emotional and fast paced.",
+          "relevance": 0
+        }
+      ]
+    },
+    {
+      "query_id": "q5",
+      "query": "I need a short status update about memory recall behavior across sessions.",
+      "candidates": [
+        {
+          "id": "q5_d1",
+          "text": "Persistent memory retrieval can reuse high-scoring notes across repeated requests in the same session key.",
+          "relevance": 3
+        },
+        {
+          "id": "q5_d2",
+          "text": "The frontend uses TypeScript and Vite for local development.",
+          "relevance": 0
+        },
+        {
+          "id": "q5_d3",
+          "text": "Memory ranking combines semantic overlap, recency, and importance.",
+          "relevance": 2
+        },
+        {
+          "id": "q5_d4",
+          "text": "A benchmark compares CMS attention and cosine similarity in synthetic mode.",
+          "relevance": 1
+        }
+      ]
+    }
+  ]
+}
+

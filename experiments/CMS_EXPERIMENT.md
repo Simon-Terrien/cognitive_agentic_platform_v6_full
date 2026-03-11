@@ -73,6 +73,9 @@ Acceptance gate output:
 - `experiments/data/emotional_corpus.txt` (emotionally variable discourse)
 - `experiments/data/dialogue_corpus.txt` (mixed operational dialogue)
 
+Task-grounded dataset:
+- `experiments/data/retrieval_rerank_dataset.json` (graded relevance labels for reranking)
+
 ## Threshold rationale (provisional)
 For `multi-corpus` mode, thresholds are calibrated from observed corpus deltas:
 - method: lower quantile across per-corpus deltas (default q=0.25)
@@ -101,3 +104,24 @@ Potential runtime integration later can be done behind an adapter/flag:
 ## Current recommendation status
 - **Conditionally ready for Phase 2B design work** (adapter and evaluation policy), but **not ready for runtime integration**.
 - Runtime integration should remain blocked until corpus-level pass rate and threshold stability are acceptable over larger datasets.
+
+## Task-grounded validation (Phase 2A.2)
+Primary task: **retrieval reranking**.
+
+Run:
+
+```bash
+python3 experiments/scripts/benchmark_cms_task.py --json
+```
+
+Task metrics reported:
+- `hit_at_1`
+- `mrr`
+- `ndcg_at_3`
+
+Interpretation guide:
+- `practical_signal=positive`: consistent downstream gain vs cosine baseline
+- `practical_signal=weak_or_mixed`: no robust practical advantage yet
+- `practical_signal=negative`: consistently worse than baseline
+
+Current phase recommendation should be based on this task signal plus corpus calibration stability.
