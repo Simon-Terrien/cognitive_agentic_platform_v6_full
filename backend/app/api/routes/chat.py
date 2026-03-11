@@ -18,9 +18,16 @@ def _preferred_model(user):
     return get_platform_store().get_preferences(user.user_id).selected_model_id
 
 
+def _session_key(user, model_id: str | None, preferred_model_id: str | None) -> str:
+    resolved_model = model_id or preferred_model_id or 'default'
+    if user is None:
+        return f'anonymous::{resolved_model}'
+    return f'user::{user.user_id}::{resolved_model}'
+
+
 def _run_chat(message: str, model_id: str | None, preferred_model_id: str | None):
     try:
-        return engine.run(message, model_id)
+        return engine.run(message, model_id, session_id=_session_key(None, model_id, preferred_model_id))
     except ProviderError as exc:
         raise HTTPException(
             status_code=exc.status_code,
@@ -35,7 +42,7 @@ def _run_chat(message: str, model_id: str | None, preferred_model_id: str | None
 
 def _stream_chat(message: str, model_id: str | None, preferred_model_id: str | None):
     try:
-        yield from engine.run_stream(message, model_id)
+        yield from engine.run_stream(message, model_id, session_id=_session_key(None, model_id, preferred_model_id))
     except ProviderError as exc:
         yield {
             'kind': 'error',
@@ -52,22 +59,53 @@ def _stream_chat(message: str, model_id: str | None, preferred_model_id: str | N
 
 @router.post('/chat')
 def chat(req: ChatRequest, user=Depends(require_user_if_enabled)):
-    return _run_chat(req.message, req.model_id, _preferred_model(user))
+    preferred = _preferred_model(user)
+    try:
+        return engine.run(req.message, req.model_id, session_id=_session_key(user, req.model_id, preferred))
+    except ProviderError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={
+                'detail': exc.detail,
+                'provider': exc.provider,
+                'requested_model_id': req.model_id or preferred,
+                'action': 'Start the provider or switch to a fallback such as Mock / Deterministic.',
+            },
+        ) from exc
 
 
 @router.get('/chat/stream')
 def chat_stream(message: str = Query(..., min_length=1), model_id: str | None = None, user=Depends(require_user_if_enabled)):
-    stream = iter_sse(_stream_chat(message, model_id, _preferred_model(user)))
+    preferred = _preferred_model(user)
+    stream = iter_sse(
+        engine.run_stream(
+            message,
+            model_id,
+            session_id=_session_key(user, model_id, preferred),
+        )
+    )
     return StreamingResponse(stream, media_type='text/event-stream')
 
 
 @router.post('/agent/query')
 def agent_query(req: AgentQueryRequest, user=Depends(require_user_if_enabled)):
-    return _run_chat(req.query, req.model_id, _preferred_model(user))
+    preferred = _preferred_model(user)
+    try:
+        return engine.run(req.query, req.model_id, session_id=_session_key(user, req.model_id, preferred))
+    except ProviderError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={
+                'detail': exc.detail,
+                'provider': exc.provider,
+                'requested_model_id': req.model_id or preferred,
+                'action': 'Start the provider or switch to a fallback such as Mock / Deterministic.',
+            },
+        ) from exc
 
 
 def _legacy_stream_events(query: str, model_id: str | None, preferred_model_id):
-    for event in _stream_chat(query, model_id, preferred_model_id):
+    for event in engine.run_stream(query, model_id, session_id=_session_key(None, model_id, preferred_model_id)):
         if event.get('kind') == 'final':
             data = event.get('data', {})
             yield {

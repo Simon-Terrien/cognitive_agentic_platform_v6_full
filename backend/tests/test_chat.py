@@ -42,6 +42,38 @@ def test_chat_round_trip(monkeypatch):
     asyncio.run(run())
 
 
+def test_chat_passes_session_key_to_engine(monkeypatch):
+    captured: dict[str, str | None] = {}
+
+    def fake_run(query: str, model_id: str | None = None, session_id: str | None = None):
+        captured['query'] = query
+        captured['model_id'] = model_id
+        captured['session_id'] = session_id
+        return {
+            'answer': 'ok',
+            'model_id': model_id or 'mock_static',
+            'provider': 'fake',
+            'plan_kind': 'analysis',
+            'confidence': 0.5,
+            'traces': [],
+            'requested_model_id': model_id or 'mock_static',
+            'resolved_model_id': model_id or 'mock_static',
+            'fallback_applied': False,
+            'fallback_reason': None,
+        }
+
+    monkeypatch.setattr(chat.engine, 'run', fake_run)
+
+    async def run():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url='http://testserver') as client:
+            response = await client.post('/api/chat', json={'message': 'Explain local model routing', 'model_id': 'ollama_qwen3'})
+        assert response.status_code == 200
+        assert captured['session_id'] == 'anonymous::ollama_qwen3'
+
+    asyncio.run(run())
+
+
 def test_agent_query_alias_round_trip(monkeypatch):
     monkeypatch.setattr(chat.engine.providers, 'get', lambda spec: FakeProvider())
     async def run():

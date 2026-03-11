@@ -10,6 +10,9 @@ class MetricsRegistry:
         self._http_requests: Counter[tuple[str, str, str]] = Counter()
         self._http_durations: defaultdict[tuple[str, str], list[float]] = defaultdict(list)
         self._auth_attempts: Counter[tuple[str, str]] = Counter()
+        self._agent_governor_events: Counter[str] = Counter()
+        self._agent_tool_policy_events: Counter[str] = Counter()
+        self._agent_memory_hits: int = 0
 
     def record_request(self, method: str, endpoint: str, status_code: int, duration_seconds: float) -> None:
         with self._lock:
@@ -19,6 +22,18 @@ class MetricsRegistry:
     def record_auth_attempt(self, method: str, outcome: str) -> None:
         with self._lock:
             self._auth_attempts[(method, outcome)] += 1
+
+    def record_agent_governor_event(self, reason: str) -> None:
+        with self._lock:
+            self._agent_governor_events[reason] += 1
+
+    def record_agent_tool_policy(self, decision: str) -> None:
+        with self._lock:
+            self._agent_tool_policy_events[decision] += 1
+
+    def record_agent_memory_hits(self, hit_count: int) -> None:
+        with self._lock:
+            self._agent_memory_hits += max(0, hit_count)
 
     def render_prometheus(self) -> str:
         lines = [
@@ -57,6 +72,29 @@ class MetricsRegistry:
             )
             for (method, outcome), value in sorted(self._auth_attempts.items()):
                 lines.append(f'cap_auth_attempts_total{{method="{method}",outcome="{outcome}"}} {value}')
+            lines.extend(
+                [
+                    '# HELP cap_agent_governor_events_total Agent governor stop/limit events.',
+                    '# TYPE cap_agent_governor_events_total counter',
+                ]
+            )
+            for reason, value in sorted(self._agent_governor_events.items()):
+                lines.append(f'cap_agent_governor_events_total{{reason="{reason}"}} {value}')
+            lines.extend(
+                [
+                    '# HELP cap_agent_tool_policy_total Agent tool policy decisions.',
+                    '# TYPE cap_agent_tool_policy_total counter',
+                ]
+            )
+            for decision, value in sorted(self._agent_tool_policy_events.items()):
+                lines.append(f'cap_agent_tool_policy_total{{decision="{decision}"}} {value}')
+            lines.extend(
+                [
+                    '# HELP cap_agent_memory_hits_total Retrieved memory entries used by agent runs.',
+                    '# TYPE cap_agent_memory_hits_total counter',
+                    f'cap_agent_memory_hits_total {self._agent_memory_hits}',
+                ]
+            )
         lines.append('')
         return '\n'.join(lines)
 

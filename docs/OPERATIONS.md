@@ -18,6 +18,10 @@
 - When auth is enabled (`APP_AUTH_REQUIRED=true`), register/login via `POST /api/auth/login` and include `Authorization: Bearer ...`.
 - Use `GET /api/users/me/preferences` to ensure preference persistence before demos.
 - Validate `/metrics` via Grafana/Prometheus to ensure observability stack is scraping.
+- Validate agent counters exist in `/metrics`:
+  - `cap_agent_governor_events_total`
+  - `cap_agent_tool_policy_total`
+  - `cap_agent_memory_hits_total`
 
 ## Common failure modes
 
@@ -25,6 +29,8 @@
 - **auth scaffold missing user**: Check `/tmp/cognitive_agentic_platform_v6_auth` for `users.json` entries or `APP_PLATFORM_DB_PATH` for SQLite records.
 - **Prometheus scrape error**: Confirm `APP_LOKI_ENABLED=true` and backend `GET /metrics` returns counters.
 - **Training plan fails**: The dataset loader caches in `/tmp/cognitive_agentic_training`. Ensure Hugging Face downloads via cached dataset or `~/.cache/huggingface`.
+- **Aggressive policy blocking**: If traces show `tool=blocked::...`, review `APP_AGENT_BLOCK_PATTERNS` and `APP_AGENT_TOOL_ALLOWLIST`.
+- **Unexpected early stop**: Check traces for `kind=governor` and tune `APP_AGENT_MAX_*` budgets.
 
 ## Verification commands
 

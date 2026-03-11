@@ -103,8 +103,30 @@ Relevant environment variables:
 - `APP_AUTH_BOOTSTRAP_EMAIL=...`
 - `APP_AUTH_BOOTSTRAP_PASSWORD=...`
 - `APP_AUTH_STORE_DIR=/tmp/cognitive_agentic_platform_v6_auth`
+- `APP_AGENT_MEMORY_DB_PATH=/tmp/cognitive_agentic_platform_v6_platform/agent_memory.db`
+- `APP_AGENT_MAX_ITERATIONS=4`
+- `APP_AGENT_MAX_TOOL_CALLS=8`
+- `APP_AGENT_MAX_PROMPT_TOKENS=6000`
+- `APP_AGENT_MAX_TOTAL_TOKENS=10000`
+- `APP_AGENT_TOOL_ALLOWLIST=dataset_registry,benchmark_notes,training_notes,reasoning`
+- `APP_AGENT_BLOCK_PATTERNS=ignore previous instructions,delete memory,rm -rf`
 
 The auth store defaults to `/tmp` so the platform remains runnable in constrained local and containerized environments.
+
+### Agent reliability layer
+
+The agent now includes:
+
+- persistent SQLite memory with hybrid retrieval scoring
+- execution governors (recursion/iterations/tool-calls/token budgets)
+- tool policy checks with allowlist and block patterns
+- audit and governance traces in responses
+
+Additional Prometheus counters are exposed at `/metrics`:
+
+- `cap_agent_governor_events_total`
+- `cap_agent_tool_policy_total`
+- `cap_agent_memory_hits_total`
 
 ### User Preferences
 
