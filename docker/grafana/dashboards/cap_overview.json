@@ -1,35 +1,29 @@
 {
-  "annotations": {
-    "list": []
-  },
+  "annotations": { "list": [] },
   "editable": true,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "panels": [
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "grafana"
-      },
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "HTTP",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafana" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          }
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
       "id": 1,
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "sum"] },
+        "tooltip": { "mode": "multi" }
       },
       "targets": [
         {
@@ -38,32 +32,32 @@
           "refId": "A"
         }
       ],
-      "title": "HTTP Request Rate",
+      "title": "HTTP Request Rate (req/s)",
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "grafana"
-      },
+      "datasource": { "type": "prometheus", "uid": "grafana" },
       "fieldConfig": {
         "defaults": {
-          "unit": "s"
+          "unit": "s",
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.5 },
+              { "color": "red", "value": 2 }
+            ]
+          }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
       "id": 2,
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "mean"] },
+        "tooltip": { "mode": "multi" }
       },
       "targets": [
         {
@@ -76,46 +70,92 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "grafana"
-      },
+      "datasource": { "type": "prometheus", "uid": "grafana" },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15 }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 16, "x": 0, "y": 9 },
+      "id": 10,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "sum"] },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (endpoint) (rate(cap_http_requests_total{status_code=~\"4..|5..\"}[5m]))",
+          "legendFormat": "{{endpoint}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Error Rate 4xx / 5xx (req/s)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafana" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 1
-              }
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 10 }
             ]
           }
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 8
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 9 },
+      "id": 11,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "orientation": "auto"
       },
+      "targets": [
+        {
+          "expr": "sum(cap_http_requests_total{status_code=~\"5..\"})",
+          "legendFormat": "5xx Total",
+          "refId": "A"
+        }
+      ],
+      "title": "Total 5xx Errors",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "id": 101,
+      "title": "Auth",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafana" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 6, "x": 0, "y": 17 },
       "id": 3,
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        }
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "orientation": "auto"
       },
       "targets": [
         {
@@ -123,27 +163,17 @@
           "refId": "A"
         }
       ],
-      "title": "Auth Failures",
+      "title": "Auth Failures (total)",
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "grafana"
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 16,
-        "x": 8,
-        "y": 8
-      },
+      "datasource": { "type": "prometheus", "uid": "grafana" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 7, "w": 10, "x": 6, "y": 17 },
       "id": 4,
       "options": {
-        "showLabels": true
+        "showLabels": true,
+        "legend": { "displayMode": "table", "placement": "right" }
       },
       "targets": [
         {
@@ -156,27 +186,136 @@
       "type": "piechart"
     },
     {
-      "datasource": {
-        "type": "loki",
-        "uid": "Loki"
+      "datasource": { "type": "prometheus", "uid": "grafana" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        },
+        "overrides": []
       },
-      "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 16
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 17 },
+      "id": 12,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
       },
+      "targets": [
+        {
+          "expr": "rate(cap_auth_attempts_total{outcome=\"failure\"}[5m])",
+          "legendFormat": "{{method}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Auth Failure Rate (req/s)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "id": 102,
+      "title": "Agent",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafana" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15 }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
+      "id": 20,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "sum"] },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (reason) (rate(cap_agent_governor_events_total[5m]))",
+          "legendFormat": "{{reason}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Agent Governor Events (rate)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafana" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 25 },
+      "id": 21,
+      "options": {
+        "showLabels": true,
+        "legend": { "displayMode": "table", "placement": "right" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (decision) (cap_agent_tool_policy_total)",
+          "legendFormat": "{{decision}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Tool Policy Decisions",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "grafana" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 25 },
+      "id": 22,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "orientation": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "cap_agent_memory_hits_total",
+          "legendFormat": "Memory Hits",
+          "refId": "A"
+        }
+      ],
+      "title": "Agent Memory Hits (cumulative)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 33 },
+      "id": 103,
+      "title": "Logs",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 34 },
       "id": 5,
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,
-        "showLabels": false,
+        "showLabels": true,
+        "showTime": true,
         "sortOrder": "Descending",
         "wrapLogMessage": true
       },
       "targets": [
         {
-          "expr": "{app=\"cognitive-agentic-platform\"}",
+          "expr": "{app=\"cognitive-agentic-platform\"} |= ``",
           "refId": "A"
         }
       ],
@@ -187,18 +326,11 @@
   "refresh": "10s",
   "schemaVersion": 39,
   "style": "dark",
-  "tags": [
-    "cap",
-    "rd"
-  ],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-15m",
-    "to": "now"
-  },
-  "title": "Cognitive Agentic Platform Overview",
+  "tags": ["cap", "rd"],
+  "templating": { "list": [] },
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "title": "Cognitive Agentic Platform — Command Surface",
   "uid": "cap-overview",
-  "version": 1
+  "version": 2
 }
